@@ -1,0 +1,92 @@
+version: 0.1
+component: build
+timeoutInSeconds: 3600
+shell: bash
+failImmediatelyOnError: true
+
+env:
+  variables:
+    COMPONENT_NAME: "frontend"
+    APP_DIR: "."
+  exportedVariables:
+    - PACKAGE_VERSION
+    - COMPONENT_NAME
+
+steps:
+  - type: Command
+    name: "Prepare build version"
+    command: |
+      set -euo pipefail
+
+      if [ -n "${OCI_PRIMARY_SOURCE_COMMIT_HASH:-}" ]; then
+        COMMIT_SHORT=$(echo "${OCI_PRIMARY_SOURCE_COMMIT_HASH}" | cut -c1-12)
+      else
+        COMMIT_SHORT="manual"
+      fi
+
+      BUILD_TS=$(date +%Y%m%d%H%M%S)
+      PACKAGE_VERSION="${COMMIT_SHORT}-${BUILD_TS}"
+
+      echo "PACKAGE_VERSION=${PACKAGE_VERSION}"
+      echo "COMPONENT_NAME=${COMPONENT_NAME}"
+
+  - type: Command
+    name: "Build frontend"
+    command: |
+      set -euo pipefail
+
+      cd "${OCI_PRIMARY_SOURCE_DIR}/${APP_DIR}"
+
+      echo "Current directory:"
+      pwd
+
+      echo "Checking Node.js and npm..."
+      if ! command -v node >/dev/null 2>&1; then
+        echo "ERROR: node is not installed in the build runner."
+        echo "Install Node.js in the build runner or add Node.js installation commands before this step."
+        exit 1
+      fi
+
+      if ! command -v npm >/dev/null 2>&1; then
+        echo "ERROR: npm is not installed in the build runner."
+        exit 1
+      fi
+
+      node --version
+      npm --version
+
+      if [ -f package-lock.json ]; then
+        npm ci
+      else
+        npm install
+      fi
+
+      npm run build
+
+      # Auto-detect common frontend build output directories.
+      if [ -d dist ]; then
+        BUILD_OUTPUT_DIR="dist"
+      elif [ -d build ]; then
+        BUILD_OUTPUT_DIR="build"
+      elif [ -d out ]; then
+        BUILD_OUTPUT_DIR="out"
+      else
+        echo "ERROR: Could not find frontend build output directory."
+        echo "Expected one of: dist, build, out"
+        exit 1
+      fi
+
+      echo "Detected build output directory: ${BUILD_OUTPUT_DIR}"
+
+      tar -czf "${OCI_PRIMARY_SOURCE_DIR}/frontend-package.tar.gz" "${BUILD_OUTPUT_DIR}"
+
+  - type: Command
+    name: "Verify frontend artifact"
+    command: |
+      set -euo pipefail
+      ls -lh "${OCI_PRIMARY_SOURCE_DIR}/frontend-package.tar.gz"
+
+outputArtifacts:
+  - name: frontend-package
+    type: BINARY
+    location: ${OCI_PRIMARY_SOURCE_DIR}/frontend-package.tar.gz
