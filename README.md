@@ -1,3 +1,4 @@
+```text
 High Level Architecture:
 
 GitHub Organization
