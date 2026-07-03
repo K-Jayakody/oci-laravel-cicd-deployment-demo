@@ -1,0 +1,187 @@
+version: 0.1
+component: build
+timeoutInSeconds: 3600
+shell: bash
+failImmediatelyOnError: true
+
+env:
+  variables:
+    COMPONENT_NAME: "backend"
+    APP_DIR: "."
+  exportedVariables:
+    - PACKAGE_VERSION
+    - COMPONENT_NAME
+
+steps:
+  - type: Command
+    name: "Prepare build version"
+    command: |
+      set -euo pipefail
+
+      if [ -n "${OCI_PRIMARY_SOURCE_COMMIT_HASH:-}" ]; then
+        COMMIT_SHORT=$(echo "${OCI_PRIMARY_SOURCE_COMMIT_HASH}" | cut -c1-12)
+      else
+        COMMIT_SHORT="manual"
+      fi
+
+      BUILD_TS=$(date +%Y%m%d%H%M%S)
+      PACKAGE_VERSION="${COMMIT_SHORT}-${BUILD_TS}"
+
+      echo "PACKAGE_VERSION=${PACKAGE_VERSION}"
+      echo "COMPONENT_NAME=${COMPONENT_NAME}"
+
+  - type: Command
+    name: "Validate backend source"
+    command: |
+      set -euo pipefail
+
+      cd "${OCI_PRIMARY_SOURCE_DIR}/${APP_DIR}"
+
+      echo "Current directory:"
+      pwd
+
+      if [ ! -f composer.json ]; then
+        echo "ERROR: composer.json not found."
+        echo "If the backend app is inside a subfolder, update APP_DIR in build_spec.yaml."
+        exit 1
+      fi
+
+      if [ ! -f artisan ]; then
+        echo "WARNING: artisan file not found. This may not be a Laravel project."
+      fi
+
+  - type: Command
+    name: "Install PHP dependencies"
+    command: |
+      set -euo pipefail
+
+      cd "${OCI_PRIMARY_SOURCE_DIR}/${APP_DIR}"
+
+      echo "Current directory:"
+      pwd
+
+      echo "Running Composer install using PHP 8.3 container..."
+
+      HOST_UID=$(id -u)
+      HOST_GID=$(id -g)
+
+      podman run --rm \
+        -v "$(pwd):/app:Z" \
+        -w /app \
+        -e COMPOSER_ALLOW_SUPERUSER=1 \
+        -e HOST_UID="${HOST_UID}" \
+        -e HOST_GID="${HOST_GID}" \
+        docker.io/library/php:8.3-cli \
+        bash -lc '
+          set -euo pipefail
+
+          echo "Container PHP version:"
+          php -v
+
+          echo "Installing required system packages and PHP extensions..."
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git \
+            unzip \
+            zip \
+            curl \
+            libzip-dev
+
+          docker-php-ext-install exif zip pdo_mysql
+
+          echo "Enabled PHP modules:"
+          php -m | sort | grep -E "openssl|exif|zip|pdo|pdo_mysql|phar"
+
+          echo "Installing Composer..."
+          curl -fsSL https://getcomposer.org/download/latest-stable/composer.phar -o /usr/local/bin/composer
+          chmod +x /usr/local/bin/composer
+
+          echo "Composer version:"
+          composer --version
+
+          echo "Running composer install..."
+          composer install \
+            --no-dev \
+            --prefer-dist \
+            --no-interaction \
+            --optimize-autoloader
+
+          echo "Fixing file ownership..."
+          chown -R "${HOST_UID}:${HOST_GID}" /app/vendor /app/bootstrap 2>/dev/null || true
+        '
+
+      echo "Composer install completed."
+      ls -ld vendor
+
+  - type: Command
+    name: "Build backend frontend assets if available"
+    command: |
+      set -euo pipefail
+
+      cd "${OCI_PRIMARY_SOURCE_DIR}/${APP_DIR}"
+
+      if [ -f package.json ]; then
+        echo "package.json found. Building frontend assets for backend..."
+
+        if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+          echo "ERROR: Node.js/npm is required because package.json exists, but node/npm is not installed."
+          echo "Install Node.js in the build runner or remove this step if backend assets are not required."
+          exit 1
+        fi
+
+        node --version
+        npm --version
+
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+
+        npm run build
+
+        rm -rf node_modules
+      else
+        echo "No package.json found. Skipping backend asset build."
+      fi
+
+  - type: Command
+    name: "Create backend deployment package"
+    command: |
+      set -euo pipefail
+
+      cd "${OCI_PRIMARY_SOURCE_DIR}/${APP_DIR}"
+
+      echo "Creating backend deployment artifact..."
+
+      rm -f /tmp/backend-package.tar.gz
+      rm -f "${OCI_PRIMARY_SOURCE_DIR}/backend-package.tar.gz"
+
+      tar \
+        --exclude='.git' \
+        --exclude='.github' \
+        --exclude='.env' \
+        --exclude='node_modules' \
+        --exclude='tests' \
+        --exclude='backend-package.tar.gz' \
+        --exclude='storage/logs/*' \
+        --exclude='storage/framework/cache/*' \
+        --exclude='storage/framework/sessions/*' \
+        --exclude='storage/framework/views/*' \
+        -czf /tmp/backend-package.tar.gz .
+
+      mv /tmp/backend-package.tar.gz "${OCI_PRIMARY_SOURCE_DIR}/backend-package.tar.gz"
+
+      echo "Backend package created successfully:"
+      ls -lh "${OCI_PRIMARY_SOURCE_DIR}/backend-package.tar.gz"
+
+  - type: Command
+    name: "Verify backend artifact"
+    command: |
+      set -euo pipefail
+      ls -lh "${OCI_PRIMARY_SOURCE_DIR}/backend-package.tar.gz"
+
+outputArtifacts:
+  - name: backend-package
+    type: BINARY
+    location: ${OCI_PRIMARY_SOURCE_DIR}/backend-package.tar.gz
