@@ -1,3 +1,29 @@
+High Level Architecture:
+
+GitHub Organization
+ ├── middleware repo  ──┐
+ ├── backend repo     ──┼── OCI DevOps External Connection
+ └── frontend repo    ──┘      PAT stored in OCI Vault
+                                          │
+                                          ▼
+                                OCI DevOps Project
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    ▼                     ▼                     ▼
+             Middleware Build       Backend Build        Frontend Build
+             Pipeline               Pipeline             Pipeline
+                    │                     │                     │
+                    ▼                     ▼                     ▼
+            	    	OCI Artifact Registry / build artifact output
+                    │                     │                     │
+                    ▼                     ▼                     ▼
+            	          Deployment Pipeline with Shell Stage
+                    │                     │                     │
+                    ▼                     ▼                     ▼
+             CICDTEST_MIDDLEWARE    CICDTEST_BACKEND      CICDTEST_FRONTEND
+             Ubuntu private VM      Ubuntu private VM     Ubuntu private VM
+
+
 Product used:
 Oracle Cloud Infrastructure Compute, Networking, Load Balancer, DevOps/Build Pipeline, Object Storage/Artifacts, GitHub integration, Ubuntu, Nginx, Laravel.
 
