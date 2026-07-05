@@ -31,14 +31,14 @@ GitHub Organization
                    ┌─────────────────────┼─────────────────────┐
                    ▼                     ▼                     ▼
             Middleware Build       Backend Build        Frontend Build
-            Pipeline               Pipeline             Pipeline
+                Pipeline              Pipeline             Pipeline
                    │                     │                     │
                    ▼                     ▼                     ▼
                    OCI Artifact Registry / Generic Build Artifacts
                    │                     │                     │
                    ▼                     ▼                     ▼
             Middleware Deploy      Backend Deploy       Frontend Deploy
-            Pipeline               Pipeline             Pipeline
+                Pipeline              Pipeline             Pipeline
                    │                     │                     │
                    ▼                     ▼                     ▼
             DevOps Shell Stage     DevOps Shell Stage   DevOps Shell Stage
