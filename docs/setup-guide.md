@@ -203,12 +203,16 @@ Use a DevOps-specific matching rule instead of matching all resources in the com
 Recommended matching rule:
 
 ```text
-ANY {
-  ALL {resource.type = 'devopsbuildpipeline', resource.compartment.id = '<COMPARTMENT_OCID>'},
-  ALL {resource.type = 'devopsdeploypipeline', resource.compartment.id = '<COMPARTMENT_OCID>'},
-  ALL {resource.type = 'devopsrepository', resource.compartment.id = '<COMPARTMENT_OCID>'},
-  ALL {resource.type = 'devopsconnection', resource.compartment.id = '<COMPARTMENT_OCID>'}
-}
+ALL {resource.type = 'devopsbuildpipeline', resource.compartment.id = '<COMPARTMENT_OCID>'}
+ALL {resource.type = 'devopsdeploypipeline', resource.compartment.id = '<COMPARTMENT_OCID>'}
+ALL {resource.type = 'devopsrepository', resource.compartment.id = '<COMPARTMENT_OCID>'}
+ALL {resource.type = 'devopsconnection', resource.compartment.id = '<COMPARTMENT_OCID>'}
+```
+
+For this demonstration I used a wider policy:
+
+```text
+ALL {resource.compartment.id = '<COMPARTMENT_OCID>'}
 ```
 
 Replace:
