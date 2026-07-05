@@ -22,36 +22,36 @@ The frontend application is exposed through an OCI Load Balancer.
 GitHub Organization
  ├── middleware repo  ──┐
  ├── backend repo     ──┼── OCI DevOps External Connection
- └── frontend repo    ──┘
-                              │
-                              │ GitHub PAT stored securely in OCI Vault
-                              ▼
-                       OCI DevOps Project
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
- Middleware Build       Backend Build        Frontend Build
- Pipeline               Pipeline             Pipeline
-        │                     │                     │
-        ▼                     ▼                     ▼
-        OCI Artifact Registry / Generic Build Artifacts
-        │                     │                     │
-        ▼                     ▼                     ▼
- Middleware Deploy      Backend Deploy       Frontend Deploy
- Pipeline               Pipeline             Pipeline
-        │                     │                     │
-        ▼                     ▼                     ▼
- DevOps Shell Stage     DevOps Shell Stage   DevOps Shell Stage
-        │                     │                     │
-        ▼                     ▼                     ▼
- CICDTEST_MIDDLEWARE    CICDTEST_BACKEND     CICDTEST_FRONTEND
- Ubuntu Private VM      Ubuntu Private VM    Ubuntu Private VM
-                                                    │
-                                                    ▼
-                                            Nginx / Frontend App
-                                                    │
-                                                    ▼
-                                             OCI Load Balancer
-                                                    │
-                                                    ▼
-                                                 End User
+ └── frontend repo    ──┘                |
+                                         │
+                                         │ GitHub PAT stored securely in OCI Vault
+                                         ▼
+                                  OCI DevOps Project
+                                         │
+                   ┌─────────────────────┼─────────────────────┐
+                   ▼                     ▼                     ▼
+            Middleware Build       Backend Build        Frontend Build
+            Pipeline               Pipeline             Pipeline
+                   │                     │                     │
+                   ▼                     ▼                     ▼
+                   OCI Artifact Registry / Generic Build Artifacts
+                   │                     │                     │
+                   ▼                     ▼                     ▼
+            Middleware Deploy      Backend Deploy       Frontend Deploy
+            Pipeline               Pipeline             Pipeline
+                   │                     │                     │
+                   ▼                     ▼                     ▼
+            DevOps Shell Stage     DevOps Shell Stage   DevOps Shell Stage
+                   │                     │                     │
+                   ▼                     ▼                     ▼
+            CICDTEST_MIDDLEWARE    CICDTEST_BACKEND     CICDTEST_FRONTEND
+            Ubuntu Private VM      Ubuntu Private VM    Ubuntu Private VM
+                                                               │
+                                                               ▼
+                                                       Nginx / Frontend App
+                                                               │
+                                                               ▼
+                                                        OCI Load Balancer
+                                                               │
+                                                               ▼
+                                                            End User
