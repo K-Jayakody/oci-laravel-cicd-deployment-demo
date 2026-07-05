@@ -358,6 +358,7 @@ sudo chmod 600 /home/deploy/.ssh/authorized_keys
 ```bash
 sudo mkdir -p /WEB/cicdtest/frontend/releases
 sudo mkdir -p /WEB/cicdtest/frontend/shared
+sudo mkdir -p /WEB/cicdtest/frontend/logs
 sudo chown -R deploy:www-data /WEB/cicdtest/frontend
 sudo chmod -R 775 /WEB/cicdtest/frontend
 ```
@@ -367,6 +368,7 @@ sudo chmod -R 775 /WEB/cicdtest/frontend
 ```bash
 sudo mkdir -p /WEB/cicdtest/backend/releases
 sudo mkdir -p /WEB/cicdtest/backend/shared
+sudo mkdir -p /WEB/cicdtest/backend/logs
 sudo chown -R deploy:www-data /WEB/cicdtest/backend
 sudo chmod -R 775 /WEB/cicdtest/backend
 ```
@@ -376,6 +378,7 @@ sudo chmod -R 775 /WEB/cicdtest/backend
 ```bash
 sudo mkdir -p /WEB/cicdtest/middleware/releases
 sudo mkdir -p /WEB/cicdtest/middleware/shared
+sudo mkdir -p /WEB/cicdtest/middleware/logs
 sudo chown -R deploy:www-data /WEB/cicdtest/middleware
 sudo chmod -R 775 /WEB/cicdtest/middleware
 ```
