@@ -215,6 +215,8 @@ For this demonstration I used a wider policy:
 ALL {resource.compartment.id = '<COMPARTMENT_OCID>'}
 ```
 
+For production, use the DevOps-specific matching rule above instead of a broad compartment-level matching rule.
+
 Replace:
 
 ```text
